@@ -1,0 +1,405 @@
+'use strict';
+
+// ===== ステージデータ =====
+// 各ステージ: { size: グリッドサイズ, state: ON=1/OFF=0 の配列 }
+// stateはランダム生成済み（解が存在することを保証）
+
+const STAGES = generateAllStages();
+
+function generateAllStages() {
+  const configs = [
+    // ステージ1-10: 3×3（易しい）
+    { size: 3 }, { size: 3 }, { size: 3 }, { size: 3 }, { size: 3 },
+    { size: 3 }, { size: 3 }, { size: 3 }, { size: 3 }, { size: 3 },
+    // ステージ11-30: 4×4（普通）
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    // ステージ31-60: 4×4（難しめ）
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 }, { size: 4 },
+    // ステージ61-85: 5×5（普通）
+    { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
+    { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
+    { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
+    { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
+    { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
+    // ステージ86-100: 5×5（難しめ）
+    { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
+    { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
+    { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
+  ];
+
+  // 手数ベースでステージを生成（全OFF状態からランダムにタップして初期状態を作る）
+  const tapCounts = [
+    // 3×3 易しい (1-10): 3〜7手
+    3, 3, 4, 4, 5, 5, 6, 6, 7, 7,
+    // 4×4 普通 (11-30): 4〜9手
+    4, 4, 5, 5, 5, 6, 6, 6, 7, 7,
+    7, 8, 8, 8, 9, 9, 9, 9, 9, 9,
+    // 4×4 難しめ (31-60): 10〜14手
+    10, 10, 10, 11, 11, 11, 11, 12, 12, 12,
+    12, 12, 13, 13, 13, 13, 13, 14, 14, 14,
+    14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+    // 5×5 普通 (61-85): 6〜12手
+    6, 6, 7, 7, 7, 8, 8, 8, 9, 9,
+    9, 10, 10, 10, 11, 11, 11, 12, 12, 12,
+    12, 12, 12, 12, 12,
+    // 5×5 難しめ (86-100): 13〜20手
+    13, 13, 14, 14, 15, 15, 16, 16, 17, 17,
+    18, 18, 19, 19, 20,
+  ];
+
+  // 固定シードで再現性のある乱数（100個）
+  const seeds = [
+    // 1-10
+    42, 137, 256, 89, 314, 512, 77, 199, 333, 421,
+    // 11-20
+    88, 600, 711, 822, 933, 144, 255, 366, 477, 588,
+    // 21-30
+    699, 810, 921, 132, 243, 354, 465, 576, 687, 798,
+    // 31-40
+    909, 120, 231, 342, 453, 564, 675, 786, 897, 108,
+    // 41-50
+    219, 330, 441, 552, 663, 774, 885, 996, 107, 218,
+    // 51-60
+    329, 440, 551, 662, 773, 884, 995, 106, 217, 328,
+    // 61-70
+    439, 550, 661, 772, 883, 994, 105, 216, 327, 438,
+    // 71-80
+    549, 660, 771, 882, 993, 104, 215, 326, 437, 548,
+    // 81-90
+    659, 770, 881, 992, 103, 214, 325, 436, 547, 658,
+    // 91-100
+    769, 880, 991, 102, 213, 324, 435, 546, 657, 768,
+  ];
+
+  return configs.map((cfg, i) => {
+    const state = generateStage(cfg.size, tapCounts[i], seeds[i]);
+    return { size: cfg.size, state };
+  });
+}
+
+function seededRandom(seed) {
+  let s = seed >>> 0; // 符号なし32bit整数に正規化
+  return function() {
+    // xorshift32: 範囲外にならない安定した疑似乱数
+    s ^= s << 13;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    s = s >>> 0; // 符号なし32bit
+    return s / 0x100000000; // [0, 1) に正規化（絶対に1.0にならない）
+  };
+}
+
+function generateStage(size, taps, seed) {
+  const n = size * size;
+  const state = new Array(n).fill(0);
+  const rand = seededRandom(seed);
+
+  // 全OFF状態から指定手数だけタップして初期配置を作る
+  // 同じセルを2回タップすると元に戻るため、各セルは最大1回だけタップ
+  // → 必ず解が存在する（逆操作で全OFFに戻せる）
+  const used = new Set();
+  let count = 0;
+  let safety = 0;
+
+  while (count < taps && safety < 10000) {
+    safety++;
+    const idx = Math.floor(rand() * n); // rand()は[0,1)なので idx は必ず[0, n-1]
+    if (used.has(idx)) continue;
+    used.add(idx);
+    applyToggle(state, size, idx);
+    count++;
+  }
+
+  // すべてOFFになってしまった場合（タップが相殺された）は別のセルを追加
+  if (state.every(v => v === 0)) {
+    for (let i = 0; i < n; i++) {
+      if (!used.has(i)) {
+        applyToggle(state, size, i);
+        break;
+      }
+    }
+  }
+
+  return state;
+}
+
+function applyToggle(state, size, idx) {
+  const row = Math.floor(idx / size);
+  const col = idx % size;
+  const neighbors = [
+    [row, col],
+    [row - 1, col],
+    [row + 1, col],
+    [row, col - 1],
+    [row, col + 1],
+  ];
+  neighbors.forEach(([r, c]) => {
+    if (r >= 0 && r < size && c >= 0 && c < size) {
+      const i = r * size + c;
+      state[i] = state[i] === 1 ? 0 : 1;
+    }
+  });
+}
+
+// ===== ゲーム状態 =====
+let currentStage = 0;
+let currentState = [];
+let moveCount = 0;
+let clearedStages = new Set();
+
+// ===== 初期化 =====
+function init() {
+  loadProgress();
+  updateHomeStats();
+  buildStageGrid();
+  buildDemoGrid();
+}
+
+function loadProgress() {
+  try {
+    const saved = localStorage.getItem('togglen_cleared');
+    if (saved) {
+      clearedStages = new Set(JSON.parse(saved));
+    }
+  } catch (e) {}
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem('togglen_cleared', JSON.stringify([...clearedStages]));
+  } catch (e) {}
+}
+
+function updateHomeStats() {
+  const el = document.getElementById('stat-cleared');
+  if (el) el.textContent = clearedStages.size;
+}
+
+// ===== 画面遷移 =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(id);
+  if (target) {
+    // 少し遅延してアニメーション
+    requestAnimationFrame(() => {
+      target.classList.add('active');
+    });
+  }
+}
+
+function showHome() {
+  updateHomeStats();
+  showScreen('screen-home');
+}
+
+function showStageSelect() {
+  buildStageGrid();
+  showScreen('screen-stage');
+}
+
+function showHowTo() {
+  // デモを初期状態にリセットしてから表示
+  demoState = [0, 1, 0, 1, 1, 1, 0, 1, 0];
+  buildDemoGrid();
+  showScreen('screen-howto');
+}
+
+// ===== ステージ選択グリッド =====
+function buildStageGrid() {
+  const grid = document.getElementById('stage-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  STAGES.forEach((stage, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'stage-cell';
+    if (clearedStages.has(i)) cell.classList.add('cleared');
+
+    cell.innerHTML = `
+      <span class="stage-num">${i + 1}</span>
+      <span class="stage-size">${stage.size}×${stage.size}</span>
+    `;
+    cell.addEventListener('click', () => startStage(i));
+    grid.appendChild(cell);
+  });
+}
+
+// ===== ゲーム開始 =====
+function startStage(stageIndex) {
+  currentStage = stageIndex;
+  const stage = STAGES[stageIndex];
+  currentState = [...stage.state];
+  moveCount = 0;
+
+  document.getElementById('game-stage-label').textContent = `STAGE ${stageIndex + 1}`;
+  document.getElementById('move-count').textContent = '0';
+
+  buildBoard(stage.size);
+  updateBoard();
+  updateGameInfo();
+
+  showScreen('screen-game');
+}
+
+function buildBoard(size) {
+  const board = document.getElementById('toggle-board');
+  if (!board) return;
+
+  // セルサイズ計算
+  const padding = 40;
+  const gap = 10;
+  const maxW = Math.min(window.innerWidth, 430) - padding * 2;
+  const maxH = window.innerHeight * 0.55;
+  const maxSize = Math.min(maxW, maxH);
+  const cellSize = Math.floor((maxSize - gap * (size - 1)) / size);
+
+  board.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
+  board.style.gridTemplateRows = `repeat(${size}, ${cellSize}px)`;
+  board.style.gap = `${gap}px`;
+  board.innerHTML = '';
+
+  for (let i = 0; i < size * size; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'toggle-cell off';
+    cell.style.width = `${cellSize}px`;
+    cell.style.height = `${cellSize}px`;
+
+    const icon = document.createElement('div');
+    icon.className = 'cell-switch';
+    cell.appendChild(icon);
+
+    cell.addEventListener('click', () => onCellTap(i));
+    board.appendChild(cell);
+  }
+}
+
+function onCellTap(idx) {
+  const stage = STAGES[currentStage];
+  applyToggle(currentState, stage.size, idx);
+  moveCount++;
+
+  // フラッシュアニメーション
+  const cells = document.querySelectorAll('.toggle-cell');
+  const row = Math.floor(idx / stage.size);
+  const col = idx % stage.size;
+  const affected = [
+    [row, col],
+    [row - 1, col],
+    [row + 1, col],
+    [row, col - 1],
+    [row, col + 1],
+  ];
+  affected.forEach(([r, c]) => {
+    if (r >= 0 && r < stage.size && c >= 0 && c < stage.size) {
+      const i = r * stage.size + c;
+      cells[i].classList.remove('flash');
+      void cells[i].offsetWidth; // reflow
+      cells[i].classList.add('flash');
+    }
+  });
+
+  updateBoard();
+  updateGameInfo();
+
+  // クリア判定
+  if (currentState.every(v => v === 0)) {
+    setTimeout(() => showClear(), 300);
+  }
+}
+
+function updateBoard() {
+  const cells = document.querySelectorAll('.toggle-cell');
+  currentState.forEach((val, i) => {
+    const cell = cells[i];
+    if (!cell) return;
+    if (val === 1) {
+      cell.classList.add('on');
+      cell.classList.remove('off');
+    } else {
+      cell.classList.add('off');
+      cell.classList.remove('on');
+    }
+  });
+}
+
+function updateGameInfo() {
+  const onCount = currentState.filter(v => v === 1).length;
+  const total = currentState.length;
+
+  document.getElementById('move-count').textContent = moveCount;
+  document.getElementById('on-count').textContent = onCount;
+
+  const progress = total > 0 ? ((total - onCount) / total) * 100 : 0;
+  const bar = document.getElementById('progress-bar');
+  if (bar) bar.style.width = `${progress}%`;
+}
+
+function resetStage() {
+  startStage(currentStage);
+}
+
+// ===== クリア =====
+function showClear() {
+  clearedStages.add(currentStage);
+  saveProgress();
+
+  document.getElementById('clear-stage-label').textContent = `STAGE ${currentStage + 1}`;
+  document.getElementById('clear-moves').textContent = moveCount;
+
+  const btnNext = document.getElementById('btn-next-stage');
+  if (btnNext) {
+    btnNext.style.display = currentStage < STAGES.length - 1 ? 'flex' : 'none';
+  }
+
+  showScreen('screen-clear');
+}
+
+function nextStage() {
+  if (currentStage < STAGES.length - 1) {
+    startStage(currentStage + 1);
+  }
+}
+
+// ===== 遊び方デモ =====
+let demoState = [0, 1, 0, 1, 1, 1, 0, 1, 0]; // 十字型ON
+
+function buildDemoGrid() {
+  const grid = document.getElementById('demo-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'demo-cell ' + (demoState[i] === 1 ? 'on' : 'off');
+    const sw = document.createElement('div');
+    sw.className = 'cell-switch';
+    cell.appendChild(sw);
+    cell.addEventListener('click', () => onDemoTap(i));
+    grid.appendChild(cell);
+  }
+}
+
+function onDemoTap(idx) {
+  applyToggle(demoState, 3, idx);
+  const cells = document.querySelectorAll('.demo-cell');
+  demoState.forEach((val, i) => {
+    cells[i].className = 'demo-cell ' + (val === 1 ? 'on' : 'off');
+    // スイッチ要素が無ければ追加
+    if (!cells[i].querySelector('.cell-switch')) {
+      const sw = document.createElement('div');
+      sw.className = 'cell-switch';
+      cells[i].appendChild(sw);
+    }
+  });
+}
+
+// ===== 起動 =====
+document.addEventListener('DOMContentLoaded', init);

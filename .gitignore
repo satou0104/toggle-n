@@ -1,0 +1,17 @@
+node_modules/
+ios/App/Pods/
+DerivedData/
+
+# 証明書
+*.key
+*.p12
+*.pem
+*.cer
+*.mobileprovision
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Capacitor
+dist/

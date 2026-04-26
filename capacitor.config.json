@@ -1,0 +1,11 @@
+{
+  "appId": "com.satou0104.togglen",
+  "appName": "Toggle-N",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "always"
+  }
+}

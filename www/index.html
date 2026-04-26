@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Toggle-N</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ホーム画面 -->
+  <div id="screen-home" class="screen active">
+    <div class="home-bg">
+      <div class="home-glow"></div>
+    </div>
+    <div class="home-content">
+      <div class="app-logo">
+        <div class="logo-icon">
+          <div class="logo-grid">
+            <div class="lg-cell off"></div>
+            <div class="lg-cell on"></div>
+            <div class="lg-cell off"></div>
+            <div class="lg-cell on"></div>
+            <div class="lg-cell off"></div>
+            <div class="lg-cell on"></div>
+            <div class="lg-cell off"></div>
+            <div class="lg-cell on"></div>
+            <div class="lg-cell off"></div>
+          </div>
+        </div>
+        <h1 class="app-title">Toggle-<span class="title-accent">N</span></h1>
+        <p class="app-subtitle">すべてのスイッチを消せ</p>
+      </div>
+      <div class="home-buttons">
+        <button class="btn-primary" onclick="showStageSelect()">
+          <span>PLAY</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="btn-secondary" onclick="showHowTo()">遊び方</button>
+      </div>
+      <div class="home-stats">
+        <div class="stat-item">
+          <span class="stat-num" id="stat-cleared">0</span>
+          <span class="stat-label">クリア</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num">100</span>
+          <span class="stat-label">ステージ</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ステージ選択画面 -->
+  <div id="screen-stage" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="showHome()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <h2 class="screen-title">ステージ選択</h2>
+      <div style="width:40px"></div>
+    </div>
+    <div class="stage-grid" id="stage-grid"></div>
+  </div>
+
+  <!-- ゲーム画面 -->
+  <div id="screen-game" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="showStageSelect()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <div class="game-header-center">
+        <span class="stage-label" id="game-stage-label">STAGE 1</span>
+      </div>
+      <button class="btn-icon" onclick="resetStage()" title="リセット">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      </button>
+    </div>
+
+    <div class="game-info">
+      <div class="info-chip">
+        <span class="info-label">手数</span>
+        <span class="info-val" id="move-count">0</span>
+      </div>
+      <div class="info-chip">
+        <span class="info-label">残り</span>
+        <span class="info-val" id="on-count">0</span>
+      </div>
+    </div>
+
+    <div class="game-area">
+      <div class="toggle-board" id="toggle-board"></div>
+    </div>
+
+    <div class="game-footer">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- クリア画面 -->
+  <div id="screen-clear" class="screen">
+    <div class="clear-bg">
+      <div class="clear-glow"></div>
+    </div>
+    <div class="clear-content">
+      <div class="clear-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <h2 class="clear-title">CLEAR!</h2>
+      <p class="clear-stage" id="clear-stage-label">STAGE 1</p>
+      <div class="clear-stats">
+        <div class="clear-stat">
+          <span class="clear-stat-num" id="clear-moves">0</span>
+          <span class="clear-stat-label">手数</span>
+        </div>
+      </div>
+      <div class="clear-buttons">
+        <button class="btn-primary" id="btn-next-stage" onclick="nextStage()">
+          <span>次のステージ</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="btn-secondary" onclick="showStageSelect()">ステージ選択</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 遊び方画面 -->
+  <div id="screen-howto" class="screen">
+    <div class="screen-header">
+      <button class="btn-back" onclick="showHome()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <h2 class="screen-title">遊び方</h2>
+      <div style="width:40px"></div>
+    </div>
+    <div class="howto-content">
+      <div class="howto-section">
+        <h3>目標</h3>
+        <p>すべてのスイッチを<strong>OFF（暗い状態）</strong>にしよう！</p>
+      </div>
+      <div class="howto-section">
+        <h3>ルール</h3>
+        <p>スイッチをタップすると、そのスイッチと<strong>上下左右のスイッチが反転</strong>します。</p>
+      </div>
+      <div class="howto-demo">
+        <div class="demo-grid" id="demo-grid"></div>
+        <p class="demo-hint">↑ 真ん中をタップしてみよう</p>
+      </div>
+      <div class="howto-section">
+        <h3>ステージ</h3>
+        <p>全<strong>100ステージ</strong>。グリッドサイズが変わるほど難しくなります。</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
