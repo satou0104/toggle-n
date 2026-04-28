@@ -81,7 +81,7 @@ function generateAllStages() {
 
   return configs.map((cfg, i) => {
     const state = generateStage(cfg.size, tapCounts[i], seeds[i]);
-    return { size: cfg.size, state };
+    return { size: cfg.size, state, minMoves: tapCounts[i] };
   });
 }
 
@@ -154,6 +154,8 @@ let currentStage = 0;
 let currentState = [];
 let moveCount = 0;
 let clearedStages = new Set();
+// ベストスコア: { stageIndex: { moves, stars } }
+let bestScores = {};
 
 // ===== 初期化 =====
 function init() {
@@ -169,12 +171,17 @@ function loadProgress() {
     if (saved) {
       clearedStages = new Set(JSON.parse(saved));
     }
+    const savedBest = localStorage.getItem('togglen_best');
+    if (savedBest) {
+      bestScores = JSON.parse(savedBest);
+    }
   } catch (e) {}
 }
 
 function saveProgress() {
   try {
     localStorage.setItem('togglen_cleared', JSON.stringify([...clearedStages]));
+    localStorage.setItem('togglen_best', JSON.stringify(bestScores));
   } catch (e) {}
 }
 
@@ -212,6 +219,21 @@ function showHowTo() {
   showScreen('screen-howto');
 }
 
+// ===== 星評価計算 =====
+function calcStars(moves, minMoves) {
+  if (moves <= minMoves) return 3;
+  if (moves <= Math.ceil(minMoves * 1.5)) return 2;
+  if (moves <= minMoves * 2) return 1;
+  return 0;
+}
+
+function starsLabel(stars) {
+  if (stars === 3) return '🥇';
+  if (stars === 2) return '🥈';
+  if (stars === 1) return '🥉';
+  return '';
+}
+
 // ===== ステージ選択グリッド =====
 function buildStageGrid() {
   const grid = document.getElementById('stage-grid');
@@ -223,9 +245,13 @@ function buildStageGrid() {
     cell.className = 'stage-cell';
     if (clearedStages.has(i)) cell.classList.add('cleared');
 
+    const best = bestScores[i];
+    const starStr = best ? starsLabel(best.stars) : '';
+
     cell.innerHTML = `
       <span class="stage-num">${i + 1}</span>
       <span class="stage-size">${stage.size}×${stage.size}</span>
+      ${starStr ? `<span class="stage-star">${starStr}</span>` : ''}
     `;
     cell.addEventListener('click', () => startStage(i));
     grid.appendChild(cell);
@@ -348,11 +374,28 @@ function resetStage() {
 
 // ===== クリア =====
 function showClear() {
+  const stage = STAGES[currentStage];
+  const stars = calcStars(moveCount, stage.minMoves);
+
+  // ベストスコア更新
+  const prev = bestScores[currentStage];
+  if (!prev || stars > prev.stars || (stars === prev.stars && moveCount < prev.moves)) {
+    bestScores[currentStage] = { moves: moveCount, stars };
+  }
+
   clearedStages.add(currentStage);
   saveProgress();
 
   document.getElementById('clear-stage-label').textContent = `STAGE ${currentStage + 1}`;
   document.getElementById('clear-moves').textContent = moveCount;
+  document.getElementById('clear-min-moves').textContent = stage.minMoves;
+
+  // 星表示
+  const starsEl = document.getElementById('clear-stars');
+  if (starsEl) {
+    starsEl.textContent = stars === 3 ? '🥇🥇🥇' : stars === 2 ? '🥈🥈' : stars === 1 ? '🥉' : '';
+    starsEl.className = 'clear-stars stars-' + stars;
+  }
 
   const btnNext = document.getElementById('btn-next-stage');
   if (btnNext) {
