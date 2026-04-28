@@ -88,6 +88,7 @@
         <span class="info-val" id="on-count">0</span>
       </div>
     </div>
+    <div class="game-criteria" id="game-criteria"></div>
 
     <div class="game-area">
       <div class="toggle-board" id="toggle-board"></div>
@@ -96,6 +97,24 @@
     <div class="game-footer">
       <div class="progress-bar-wrap">
         <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <button class="btn-hint" onclick="requestHint()">
+        ヒント
+      </button>
+    </div>
+  </div>
+
+  <!-- ヒント確認ダイアログ -->
+  <div id="hint-dialog" class="dialog-overlay">
+    <div class="dialog-box">
+      <p class="dialog-text">解の手順を1手ずつ<br>案内します。<br>よろしいですか？</p>
+      <div class="dialog-notes">
+        <span id="hint-reset-note" class="dialog-note dialog-warn">※最初の状態に戻ります</span>
+        <span class="dialog-note">※広告が表示されます</span>
+      </div>
+      <div class="dialog-buttons">
+        <button class="dialog-btn-cancel" onclick="closeHintDialog()">キャンセル</button>
+        <button class="dialog-btn-ok" onclick="confirmHint()">OK</button>
       </div>
     </div>
   </div>

@@ -80,8 +80,8 @@ function generateAllStages() {
   ];
 
   return configs.map((cfg, i) => {
-    const state = generateStage(cfg.size, tapCounts[i], seeds[i]);
-    return { size: cfg.size, state, minMoves: tapCounts[i] };
+    const { state, solution } = generateStage(cfg.size, tapCounts[i], seeds[i]);
+    return { size: cfg.size, state, solution, minMoves: tapCounts[i] };
   });
 }
 
@@ -101,34 +101,34 @@ function generateStage(size, taps, seed) {
   const n = size * size;
   const state = new Array(n).fill(0);
   const rand = seededRandom(seed);
+  const solution = []; // 解のタップ列（生成時と逆順にタップすれば全OFFに戻る）
 
-  // 全OFF状態から指定手数だけタップして初期配置を作る
-  // 同じセルを2回タップすると元に戻るため、各セルは最大1回だけタップ
-  // → 必ず解が存在する（逆操作で全OFFに戻せる）
   const used = new Set();
   let count = 0;
   let safety = 0;
 
   while (count < taps && safety < 10000) {
     safety++;
-    const idx = Math.floor(rand() * n); // rand()は[0,1)なので idx は必ず[0, n-1]
+    const idx = Math.floor(rand() * n);
     if (used.has(idx)) continue;
     used.add(idx);
     applyToggle(state, size, idx);
+    solution.push(idx);
     count++;
   }
 
-  // すべてOFFになってしまった場合（タップが相殺された）は別のセルを追加
+  // すべてOFFになってしまった場合は別のセルを追加
   if (state.every(v => v === 0)) {
     for (let i = 0; i < n; i++) {
       if (!used.has(i)) {
         applyToggle(state, size, i);
+        solution.push(i);
         break;
       }
     }
   }
 
-  return state;
+  return { state, solution };
 }
 
 function applyToggle(state, size, idx) {
@@ -156,6 +156,8 @@ let moveCount = 0;
 let clearedStages = new Set();
 // ベストスコア: { stageIndex: { moves, stars } }
 let bestScores = {};
+// 連続クリア数（インタースティシャル広告用）
+let consecutiveClear = 0;
 
 // ===== 初期化 =====
 function init() {
@@ -203,11 +205,13 @@ function showScreen(id) {
 }
 
 function showHome() {
+  consecutiveClear = 0;
   updateHomeStats();
   showScreen('screen-home');
 }
 
 function showStageSelect() {
+  consecutiveClear = 0;
   buildStageGrid();
   showScreen('screen-stage');
 }
@@ -228,9 +232,9 @@ function calcStars(moves, minMoves) {
 }
 
 function starsLabel(stars) {
-  if (stars === 3) return '🥇';
-  if (stars === 2) return '🥈';
-  if (stars === 1) return '🥉';
+  if (stars === 3) return '★★★';
+  if (stars === 2) return '★★';
+  if (stars === 1) return '★';
   return '';
 }
 
@@ -247,11 +251,12 @@ function buildStageGrid() {
 
     const best = bestScores[i];
     const starStr = best ? starsLabel(best.stars) : '';
+    const starClass = best ? `stage-star stars-${best.stars}` : '';
 
     cell.innerHTML = `
       <span class="stage-num">${i + 1}</span>
       <span class="stage-size">${stage.size}×${stage.size}</span>
-      ${starStr ? `<span class="stage-star">${starStr}</span>` : ''}
+      ${starStr ? `<span class="${starClass}">${starStr}</span>` : ''}
     `;
     cell.addEventListener('click', () => startStage(i));
     grid.appendChild(cell);
@@ -264,9 +269,18 @@ function startStage(stageIndex) {
   const stage = STAGES[stageIndex];
   currentState = [...stage.state];
   moveCount = 0;
+  hintStep = 0;
 
   document.getElementById('game-stage-label').textContent = `STAGE ${stageIndex + 1}`;
   document.getElementById('move-count').textContent = '0';
+
+  // 星基準表示
+  const m = stage.minMoves;
+  const criteriaEl = document.getElementById('game-criteria');
+  if (criteriaEl) {
+    criteriaEl.innerHTML =
+      `<span class="cr-label">手数基準</span><span class="cr-gold">★★★${m}</span><span class="cr-sep">/</span><span class="cr-silver">★★${Math.ceil(m * 1.5)}</span><span class="cr-sep">/</span><span class="cr-bronze">★${m * 2}</span>`;
+  }
 
   buildBoard(stage.size);
   updateBoard();
@@ -372,6 +386,64 @@ function resetStage() {
   startStage(currentStage);
 }
 
+// ===== ヒント =====
+let hintStep = 0; // 何手目まで案内済みか
+
+function requestHint() {
+  const dialog = document.getElementById('hint-dialog');
+  if (!dialog) return;
+
+  // ヒントカウント0（初回）の場合は「最初の状態に戻ります」を表示
+  const noteEl = document.getElementById('hint-reset-note');
+  if (noteEl) {
+    noteEl.style.display = hintStep === 0 ? 'block' : 'none';
+  }
+
+  dialog.classList.add('active');
+}
+
+function closeHintDialog() {
+  const dialog = document.getElementById('hint-dialog');
+  if (dialog) dialog.classList.remove('active');
+}
+
+function confirmHint() {
+  closeHintDialog();
+  // 広告連動用フック（将来ここに広告表示処理を挿入）
+  // showRewardedAd(() => { applyHint(); });
+  applyHint();
+}
+
+function applyHint() {
+  const stage = STAGES[currentStage];
+  const solution = stage.solution;
+
+  // 全ステップ案内済みなら何もしない
+  if (hintStep >= solution.length) return;
+
+  // 初期状態から hintStep 手分だけ再現
+  currentState = [...stage.state];
+  for (let i = 0; i < hintStep; i++) {
+    applyToggle(currentState, stage.size, solution[i]);
+  }
+  moveCount = hintStep;
+  updateBoard();
+  updateGameInfo();
+
+  // 次の1手を光らせる
+  const hintIdx = solution[hintStep];
+  const cells = document.querySelectorAll('.toggle-cell');
+  const cell = cells[hintIdx];
+  if (cell) {
+    cell.classList.remove('hint');
+    void cell.offsetWidth;
+    cell.classList.add('hint');
+    setTimeout(() => cell.classList.remove('hint'), 1900);
+  }
+
+  hintStep++;
+}
+
 // ===== クリア =====
 function showClear() {
   const stage = STAGES[currentStage];
@@ -386,6 +458,13 @@ function showClear() {
   clearedStages.add(currentStage);
   saveProgress();
 
+  // 連続クリアカウント
+  consecutiveClear++;
+  if (consecutiveClear % 5 === 0) {
+    // インタースティシャル広告用フック（将来ここに広告表示処理を挿入）
+    // showInterstitialAd();
+  }
+
   document.getElementById('clear-stage-label').textContent = `STAGE ${currentStage + 1}`;
   document.getElementById('clear-moves').textContent = moveCount;
   document.getElementById('clear-min-moves').textContent = stage.minMoves;
@@ -393,7 +472,7 @@ function showClear() {
   // 星表示
   const starsEl = document.getElementById('clear-stars');
   if (starsEl) {
-    starsEl.textContent = stars === 3 ? '🥇🥇🥇' : stars === 2 ? '🥈🥈' : stars === 1 ? '🥉' : '';
+    starsEl.textContent = stars === 3 ? '★★★' : stars === 2 ? '★★' : stars === 1 ? '★' : '';
     starsEl.className = 'clear-stars stars-' + stars;
   }
 
