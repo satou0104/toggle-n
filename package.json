@@ -7,6 +7,7 @@
     "copy-to-root": "cp www/index.html index.html && cp www/app.js app.js && cp www/style.css style.css"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^7.2.0",
     "@capacitor/core": "^7.0.0"
   },
   "devDependencies": {

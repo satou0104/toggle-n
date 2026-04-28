@@ -409,9 +409,8 @@ function closeHintDialog() {
 
 function confirmHint() {
   closeHintDialog();
-  // 広告連動用フック（将来ここに広告表示処理を挿入）
-  // showRewardedAd(() => { applyHint(); });
-  applyHint();
+  // リワード広告を見てからヒントを実行
+  showRewardedAd(() => { applyHint(); });
 }
 
 function applyHint() {
@@ -461,8 +460,8 @@ function showClear() {
   // 連続クリアカウント
   consecutiveClear++;
   if (consecutiveClear % 5 === 0) {
-    // インタースティシャル広告用フック（将来ここに広告表示処理を挿入）
-    // showInterstitialAd();
+    // インタースティシャル広告
+    showInterstitialAd();
   }
 
   document.getElementById('clear-stage-label').textContent = `STAGE ${currentStage + 1}`;
@@ -523,5 +522,45 @@ function onDemoTap(idx) {
   });
 }
 
+// ===== AdMob =====
+const ADMOB_INTERSTITIAL_ID = 'ca-app-pub-8707369701475326/5795483275';
+const ADMOB_REWARD_ID       = 'ca-app-pub-8707369701475326/5320615215';
+
+async function initAdMob() {
+  try {
+    const { AdMob } = Capacitor.Plugins;
+    if (!AdMob) return;
+    await AdMob.initialize({ requestTrackingAuthorization: false });
+  } catch (e) {}
+}
+
+async function showInterstitialAd() {
+  try {
+    const { AdMob } = Capacitor.Plugins;
+    if (!AdMob) return;
+    await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL_ID });
+    await AdMob.showInterstitial();
+  } catch (e) {}
+}
+
+async function showRewardedAd(onRewarded) {
+  try {
+    const { AdMob } = Capacitor.Plugins;
+    if (!AdMob) {
+      onRewarded();
+      return;
+    }
+    await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID });
+    AdMob.addListener('onRewarded', () => { onRewarded(); });
+    await AdMob.showRewardVideoAd();
+  } catch (e) {
+    // 広告取得失敗時もヒントは実行する
+    onRewarded();
+  }
+}
+
 // ===== 起動 =====
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  initAdMob();
+});

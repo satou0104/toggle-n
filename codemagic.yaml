@@ -29,6 +29,10 @@ workflows:
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 14.0/g' ios/App/App.xcodeproj/project.pbxproj
       - name: CocoaPods install
         script: cd ios/App && pod install
+      - name: Increment build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $(($(date +%s) / 60))
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
