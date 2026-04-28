@@ -10,7 +10,7 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.satou0104.togglen
       vars:
-        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       xcode: latest
       cocoapods: default
@@ -35,7 +35,7 @@ workflows:
       - name: Build iOS
         script: |
           xcode-project build-ipa \
-            --project "$XCODE_PROJECT" \
+            --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
