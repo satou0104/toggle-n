@@ -28,7 +28,6 @@
   --radius-sm: 10px;
   --radius-xs: 6px;
   --transition: 0.18s cubic-bezier(0.4,0,0.2,1);
-  --app-height: 100vh; /* JSで起動時に固定値に上書きされる */
 }
 
 html, body {
@@ -45,7 +44,6 @@ html, body {
 .screen {
   position: fixed;
   inset: 0;
-  height: var(--app-height);
   display: flex;
   flex-direction: column;
   background: var(--bg);

@@ -289,11 +289,9 @@ function startStage(stageIndex) {
   showScreen('screen-game');
 }
 
-// ボードサイズはセーフエリア確定後に計算して固定
-let BOARD_MAX_SIZE = 300; // デフォルト値
-
+// ボードサイズ計算
 function calcBoardMaxSize() {
-  BOARD_MAX_SIZE = Math.min(
+  return Math.min(
     Math.min(window.innerWidth, 430) - 80,
     window.innerHeight * 0.50
   );
@@ -304,7 +302,8 @@ function buildBoard(size) {
   if (!board) return;
 
   const gap = 10;
-  const cellSize = Math.floor((BOARD_MAX_SIZE - gap * (size - 1)) / size);
+  const maxSize = calcBoardMaxSize();
+  const cellSize = Math.floor((maxSize - gap * (size - 1)) / size);
 
   board.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
   board.style.gridTemplateRows = `repeat(${size}, ${cellSize}px)`;
@@ -577,13 +576,6 @@ async function showRewardedAd(onRewarded) {
 
 // ===== 起動 =====
 document.addEventListener('DOMContentLoaded', () => {
-  // iOSのWebViewでダイアログ表示時にビューポートが変化する問題の対策
-  // 起動時の高さをCSS変数として固定する
-  setTimeout(() => {
-    const vh = window.innerHeight;
-    document.documentElement.style.setProperty('--app-height', `${vh}px`);
-    calcBoardMaxSize();
-    init();
-    initAdMob();
-  }, 100);
+  init();
+  initAdMob();
 });
