@@ -289,11 +289,15 @@ function startStage(stageIndex) {
   showScreen('screen-game');
 }
 
-// ボードサイズは起動時に一度だけ計算して固定
-const BOARD_MAX_SIZE = Math.min(
-  Math.min(window.innerWidth, 430) - 80,
-  window.innerHeight * 0.50
-);
+// ボードサイズはセーフエリア確定後に計算して固定
+let BOARD_MAX_SIZE = 300; // デフォルト値
+
+function calcBoardMaxSize() {
+  BOARD_MAX_SIZE = Math.min(
+    Math.min(window.innerWidth, 430) - 80,
+    window.innerHeight * 0.50
+  );
+}
 
 function buildBoard(size) {
   const board = document.getElementById('toggle-board');
@@ -573,6 +577,10 @@ async function showRewardedAd(onRewarded) {
 
 // ===== 起動 =====
 document.addEventListener('DOMContentLoaded', () => {
-  init();
-  initAdMob();
+  // セーフエリア確定を待ってからボードサイズを計算
+  setTimeout(() => {
+    calcBoardMaxSize();
+    init();
+    initAdMob();
+  }, 100);
 });
