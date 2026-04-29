@@ -326,12 +326,13 @@ function onCellTap(idx) {
   applyToggle(currentState, stage.size, idx);
   moveCount++;
 
-  // ヒント点滅中のセルをタップしたら点滅を止める
+  // セル一覧取得（ヒント点滅停止 + フラッシュアニメーションで共用）
   const cells = document.querySelectorAll('.toggle-cell');
+
+  // ヒント点滅中のセルをタップしたら点滅を止める
   cells[idx].classList.remove('hint');
 
   // フラッシュアニメーション
-  const cells = document.querySelectorAll('.toggle-cell');
   const row = Math.floor(idx / stage.size);
   const col = idx % stage.size;
   const affected = [
