@@ -577,8 +577,11 @@ async function showRewardedAd(onRewarded) {
 
 // ===== 起動 =====
 document.addEventListener('DOMContentLoaded', () => {
-  // セーフエリア確定を待ってからボードサイズを計算
+  // iOSのWebViewでダイアログ表示時にビューポートが変化する問題の対策
+  // 起動時の高さをCSS変数として固定する
   setTimeout(() => {
+    const vh = window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', `${vh}px`);
     calcBoardMaxSize();
     init();
     initAdMob();
