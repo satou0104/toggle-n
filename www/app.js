@@ -289,17 +289,18 @@ function startStage(stageIndex) {
   showScreen('screen-game');
 }
 
+// ボードサイズは起動時に一度だけ計算して固定
+const BOARD_MAX_SIZE = Math.min(
+  Math.min(window.innerWidth, 430) - 80,
+  window.innerHeight * 0.50
+);
+
 function buildBoard(size) {
   const board = document.getElementById('toggle-board');
   if (!board) return;
 
-  // セルサイズ計算
-  const padding = 40;
   const gap = 10;
-  const maxW = Math.min(window.innerWidth, 430) - padding * 2;
-  const maxH = window.innerHeight * 0.55;
-  const maxSize = Math.min(maxW, maxH);
-  const cellSize = Math.floor((maxSize - gap * (size - 1)) / size);
+  const cellSize = Math.floor((BOARD_MAX_SIZE - gap * (size - 1)) / size);
 
   board.style.gridTemplateColumns = `repeat(${size}, ${cellSize}px)`;
   board.style.gridTemplateRows = `repeat(${size}, ${cellSize}px)`;
