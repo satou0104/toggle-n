@@ -589,6 +589,13 @@ html, body {
   line-height: 1.7;
 }
 
+.dialog-hint-desc {
+  font-size: 13px;
+  color: var(--accent2);
+  text-align: center;
+  line-height: 1.6;
+}
+
 .dialog-notes {
   display: flex;
   flex-direction: column;

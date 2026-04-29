@@ -398,10 +398,16 @@ function requestHint() {
   const dialog = document.getElementById('hint-dialog');
   if (!dialog) return;
 
-  // ヒントカウント0（初回）の場合は「最初の状態に戻ります」を表示
-  const noteEl = document.getElementById('hint-reset-note');
-  if (noteEl) {
-    noteEl.style.display = hintStep === 0 ? 'block' : 'none';
+  const stage = STAGES[currentStage];
+  const remaining = stage.minMoves - hintStep - 1;
+
+  const descEl = document.getElementById('hint-desc');
+  if (descEl) {
+    if (remaining > 0) {
+      descEl.innerHTML = `ヒントを使うとあと${remaining}手で<br>クリアできます。`;
+    } else {
+      descEl.innerHTML = `ヒントを使うと次の1手で<br>クリアできます。`;
+    }
   }
 
   dialog.classList.add('active');
