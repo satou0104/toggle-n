@@ -456,7 +456,7 @@ function closeHintDialog() {
 
 function confirmHint() {
   closeHintDialog();
-  // リワード広告を見てからヒントを実行
+  // リワード広告を見てからヒントを実行（広告が閉じた後に点滅開始）
   showRewardedAd(() => { applyHint(); });
 }
 
@@ -592,17 +592,13 @@ async function showRewardedAd(onRewarded) {
       onRewarded();
       return;
     }
+    let rewarded = false;
     await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID });
-    AdMob.addListener('onRewarded', () => {
-      onRewarded();
-    });
-    // 広告が閉じられたらヒント点滅を再起動
+    AdMob.addListener('onRewarded', () => { rewarded = true; });
+    // 広告が完全に閉じた後にコールバックを実行
     AdMob.addListener('onRewardedVideoAdClosed', () => {
-      const hintCell = document.querySelector('.toggle-cell.hint');
-      if (hintCell) {
-        hintCell.classList.remove('hint');
-        void hintCell.offsetWidth;
-        hintCell.classList.add('hint');
+      if (rewarded) {
+        onRewarded();
       }
     });
     await AdMob.showRewardVideoAd();
