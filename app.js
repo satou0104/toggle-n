@@ -333,8 +333,8 @@ function onCellTap(idx) {
   // セル一覧取得（ヒント点滅停止 + フラッシュアニメーションで共用）
   const cells = document.querySelectorAll('.toggle-cell');
 
-  // ヒント点滅中のセルをタップしたら点滅を止める
-  cells[idx].classList.remove('hint');
+  // どのセルをタップしても点滅を止める
+  cells.forEach(c => c.classList.remove('hint'));
 
   // フラッシュアニメーション
   const row = Math.floor(idx / stage.size);
@@ -392,6 +392,8 @@ function updateGameInfo() {
 }
 
 function resetStage() {
+  // 点滅中のヒントを消す
+  document.querySelectorAll('.toggle-cell.hint').forEach(c => c.classList.remove('hint'));
   startStage(currentStage);
 }
 
@@ -444,15 +446,17 @@ function applyHint() {
   updateBoard();
   updateGameInfo();
 
-  // 次の1手を光らせる
+  // 次の1手を光らせる（タップするか次の操作まで点滅し続ける）
   const hintIdx = solution[hintStep];
   const cells = document.querySelectorAll('.toggle-cell');
+
+  // 前の点滅を消す
+  cells.forEach(c => c.classList.remove('hint'));
+
   const cell = cells[hintIdx];
   if (cell) {
-    cell.classList.remove('hint');
-    void cell.offsetWidth;
     cell.classList.add('hint');
-    setTimeout(() => cell.classList.remove('hint'), 1900);
+    // setTimeout は使わない → タップ時に消える
   }
 
   hintStep++;

@@ -657,7 +657,7 @@ html, body {
 }
 
 .toggle-cell.hint {
-  animation: hintPulse 0.6s ease 3;
+  animation: hintPulse 0.6s ease infinite;
 }
 
 /* ===== クリア画面 ===== */
