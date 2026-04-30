@@ -429,6 +429,8 @@ function stopHintBlink() {
 
 // ===== ヒント =====
 let hintStep = 0; // 何手目まで案内済みか
+
+function requestHint() {
   const dialog = document.getElementById('hint-dialog');
   if (!dialog) return;
 
