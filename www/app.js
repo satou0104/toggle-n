@@ -592,12 +592,10 @@ async function showRewardedAd(onRewarded) {
       onRewarded();
       return;
     }
-    let rewarded = false;
     await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID });
-    AdMob.addListener('onRewarded', () => { rewarded = true; });
-    await AdMob.showRewardVideoAd();
-    // awaitが解決 = 広告が閉じた後
-    if (rewarded) {
+    // showRewardVideoAd は広告が閉じた後に resolve し、報酬情報を返す
+    const rewardItem = await AdMob.showRewardVideoAd();
+    if (rewardItem) {
       onRewarded();
     }
   } catch (e) {
