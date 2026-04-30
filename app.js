@@ -571,7 +571,27 @@ async function showRewardedAd(onRewarded) {
       return;
     }
     await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID });
-    AdMob.addListener('onRewarded', () => { onRewarded(); });
+    AdMob.addListener('onRewarded', () => {
+      onRewarded();
+      // 広告クローズ後に点滅が消えることへの対策：少し遅延して再起動
+      setTimeout(() => {
+        const hintCell = document.querySelector('.toggle-cell.hint');
+        if (hintCell) {
+          hintCell.classList.remove('hint');
+          void hintCell.offsetWidth;
+          hintCell.classList.add('hint');
+        }
+      }, 500);
+    });
+    // 広告が閉じられたらヒント点滅を再起動
+    AdMob.addListener('onRewardedVideoAdClosed', () => {
+      const hintCell = document.querySelector('.toggle-cell.hint');
+      if (hintCell) {
+        hintCell.classList.remove('hint');
+        void hintCell.offsetWidth;
+        hintCell.classList.add('hint');
+      }
+    });
     await AdMob.showRewardVideoAd();
   } catch (e) {
     // 広告取得失敗時もヒントは実行する
