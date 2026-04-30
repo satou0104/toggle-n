@@ -455,8 +455,9 @@ function applyHint() {
 
   const cell = cells[hintIdx];
   if (cell) {
+    // アニメーションをリセットしてから再適用（広告表示後の再開対策）
+    void cell.offsetWidth;
     cell.classList.add('hint');
-    // setTimeout は使わない → タップ時に消える
   }
 
   hintStep++;
@@ -582,4 +583,16 @@ async function showRewardedAd(onRewarded) {
 document.addEventListener('DOMContentLoaded', () => {
   init();
   initAdMob();
+});
+
+// アプリがフォアグラウンドに戻ったときにヒント点滅を再起動
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const hintCell = document.querySelector('.toggle-cell.hint');
+    if (hintCell) {
+      hintCell.classList.remove('hint');
+      void hintCell.offsetWidth;
+      hintCell.classList.add('hint');
+    }
+  }
 });
