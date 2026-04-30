@@ -650,14 +650,9 @@ html, body {
 .dialog-btn-ok:active { transform: scale(0.96); }
 
 /* ヒントセルのチカチカアニメーション */
-@keyframes hintPulse {
-  0%   { box-shadow: 0 0 0px rgba(255,220,50,0);   border-color: var(--border); }
-  50%  { box-shadow: 0 0 24px rgba(255,220,50,0.9); border-color: #ffd932; }
-  100% { box-shadow: 0 0 0px rgba(255,220,50,0);   border-color: var(--border); }
-}
-
-.toggle-cell.hint {
-  animation: hintPulse 0.6s ease infinite;
+.toggle-cell.hint-on {
+  box-shadow: 0 0 24px rgba(255,220,50,0.9) !important;
+  border-color: #ffd932 !important;
 }
 
 /* ===== クリア画面 ===== */

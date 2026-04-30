@@ -334,7 +334,7 @@ function onCellTap(idx) {
   const cells = document.querySelectorAll('.toggle-cell');
 
   // どのセルをタップしても点滅を止める
-  cells.forEach(c => c.classList.remove('hint'));
+  stopHintBlink();
 
   // フラッシュアニメーション
   const row = Math.floor(idx / stage.size);
@@ -392,15 +392,43 @@ function updateGameInfo() {
 }
 
 function resetStage() {
-  // 点滅中のヒントを消す
-  document.querySelectorAll('.toggle-cell.hint').forEach(c => c.classList.remove('hint'));
+  stopHintBlink();
   startStage(currentStage);
+}
+
+// ===== ヒント点滅管理 =====
+let hintBlinkInterval = null;
+let hintBlinkCell = null;
+
+function startHintBlink(cell) {
+  stopHintBlink();
+  hintBlinkCell = cell;
+  cell.classList.add('hint');
+  let on = true;
+  hintBlinkInterval = setInterval(() => {
+    if (!hintBlinkCell) return;
+    on = !on;
+    if (on) {
+      hintBlinkCell.classList.add('hint-on');
+    } else {
+      hintBlinkCell.classList.remove('hint-on');
+    }
+  }, 300);
+}
+
+function stopHintBlink() {
+  if (hintBlinkInterval) {
+    clearInterval(hintBlinkInterval);
+    hintBlinkInterval = null;
+  }
+  if (hintBlinkCell) {
+    hintBlinkCell.classList.remove('hint', 'hint-on');
+    hintBlinkCell = null;
+  }
 }
 
 // ===== ヒント =====
 let hintStep = 0; // 何手目まで案内済みか
-
-function requestHint() {
   const dialog = document.getElementById('hint-dialog');
   if (!dialog) return;
 
@@ -449,21 +477,13 @@ function applyHint() {
   // 次の1手を光らせる（タップするか次の操作まで点滅し続ける）
   const hintIdx = solution[hintStep];
   const cells = document.querySelectorAll('.toggle-cell');
-
-  // 前の点滅を消す
-  cells.forEach(c => c.classList.remove('hint'));
-
   const cell = cells[hintIdx];
   if (cell) {
-    // アニメーションをリセットしてから再適用（広告表示後の再開対策）
-    void cell.offsetWidth;
-    cell.classList.add('hint');
+    startHintBlink(cell);
   }
 
   hintStep++;
 }
-
-// ===== クリア =====
 function showClear() {
   const stage = STAGES[currentStage];
   const stars = calcStars(moveCount, stage.minMoves);
@@ -573,15 +593,6 @@ async function showRewardedAd(onRewarded) {
     await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID });
     AdMob.addListener('onRewarded', () => {
       onRewarded();
-      // 広告クローズ後に点滅が消えることへの対策：少し遅延して再起動
-      setTimeout(() => {
-        const hintCell = document.querySelector('.toggle-cell.hint');
-        if (hintCell) {
-          hintCell.classList.remove('hint');
-          void hintCell.offsetWidth;
-          hintCell.classList.add('hint');
-        }
-      }, 500);
     });
     // 広告が閉じられたらヒント点滅を再起動
     AdMob.addListener('onRewardedVideoAdClosed', () => {
@@ -603,16 +614,4 @@ async function showRewardedAd(onRewarded) {
 document.addEventListener('DOMContentLoaded', () => {
   init();
   initAdMob();
-});
-
-// アプリがフォアグラウンドに戻ったときにヒント点滅を再起動
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    const hintCell = document.querySelector('.toggle-cell.hint');
-    if (hintCell) {
-      hintCell.classList.remove('hint');
-      void hintCell.offsetWidth;
-      hintCell.classList.add('hint');
-    }
-  }
 });
