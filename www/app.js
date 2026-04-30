@@ -595,13 +595,11 @@ async function showRewardedAd(onRewarded) {
     let rewarded = false;
     await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID });
     AdMob.addListener('onRewarded', () => { rewarded = true; });
-    // 広告が完全に閉じた後にコールバックを実行
-    AdMob.addListener('onRewardedVideoAdClosed', () => {
-      if (rewarded) {
-        onRewarded();
-      }
-    });
     await AdMob.showRewardVideoAd();
+    // awaitが解決 = 広告が閉じた後
+    if (rewarded) {
+      onRewarded();
+    }
   } catch (e) {
     // 広告取得失敗時もヒントは実行する
     onRewarded();
