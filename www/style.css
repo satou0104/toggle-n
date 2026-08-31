@@ -920,3 +920,85 @@ html, body {
 
 /* ===== スクロールバー非表示 ===== */
 ::-webkit-scrollbar { display: none; }
+
+/* ===== 設定画面 ===== */
+.settings-content {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.setting-desc {
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.language-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.language-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.language-btn:active {
+  background: var(--surface2);
+  transform: scale(0.98);
+}
+
+.language-btn.active {
+  border-color: var(--accent);
+  background: rgba(124,106,247,0.1);
+}
+
+.lang-name {
+  flex: 1;
+  text-align: left;
+}
+
+.lang-check {
+  font-size: 18px;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.language-btn.active .lang-check {
+  opacity: 1;
+}

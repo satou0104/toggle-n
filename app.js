@@ -1,9 +1,247 @@
 'use strict';
 
-// ===== ステージデータ =====
-// 各ステージ: { size: グリッドサイズ, state: ON=1/OFF=0 の配列 }
-// stateはランダム生成済み（解が存在することを保証）
+// ===== 多言語対応 =====
+let currentLanguage = 'en'; // デフォルトは英語
 
+const i18n = {
+  en: {
+    appSubtitle: 'Turn off all the switches',
+    play: 'PLAY',
+    howToPlay: 'How to Play',
+    settings: 'Settings',
+    cleared: 'Cleared',
+    stages: 'Stages',
+    stageSelect: 'Stage Select',
+    stage: 'STAGE',
+    moves: 'Moves',
+    remaining: 'Left',
+    hint: 'Hint',
+    reset: 'Reset',
+    clear: 'CLEAR!',
+    nextStage: 'Next Stage',
+    minMoves: 'Best',
+    movesGoal: 'Moves Goal',
+    
+    // 遊び方
+    howtoGoal: 'Goal',
+    howtoGoalText: 'Turn all switches <strong>OFF (dark state)</strong>!',
+    howtoRule: 'Rule',
+    howtoRuleText: 'Tap a switch to flip it and its <strong>adjacent switches (up, down, left, right)</strong>.',
+    howtoDemoHint: '↑ Tap the center',
+    howtoStages: 'Stages',
+    howtoStagesText: '<strong>100 stages</strong> in total. The larger the grid, the harder it gets.',
+    
+    // ヒント
+    hintDialogText: 'Light up the next move.<br>Is that OK?',
+    hintDialogNote: '※ An ad will be displayed',
+    hintDialogCancel: 'Cancel',
+    hintDialogOk: 'OK',
+    hintDescRemaining: 'With this hint, you can clear in {n} more move(s).',
+    hintDescFinal: 'With this hint, you can clear in the next move.',
+    
+    // 設定
+    settingsTitle: 'Settings',
+    settingsLanguage: 'Language',
+    settingsLanguageDesc: 'Change app language',
+    languageEn: 'English',
+    languageJa: '日本語',
+    back: 'Back'
+  },
+  ja: {
+    appSubtitle: 'すべてのスイッチを消せ',
+    play: 'PLAY',
+    howToPlay: '遊び方',
+    settings: '設定',
+    cleared: 'クリア',
+    stages: 'ステージ',
+    stageSelect: 'ステージ選択',
+    stage: 'STAGE',
+    moves: '手数',
+    remaining: '残り',
+    hint: 'ヒント',
+    reset: 'リセット',
+    clear: 'CLEAR!',
+    nextStage: '次のステージ',
+    minMoves: '最短',
+    movesGoal: '手数基準',
+    
+    // 遊び方
+    howtoGoal: '目標',
+    howtoGoalText: 'すべてのスイッチを<strong>OFF（暗い状態）</strong>にしよう！',
+    howtoRule: 'ルール',
+    howtoRuleText: 'スイッチをタップすると、そのスイッチと<strong>上下左右のスイッチが反転</strong>します。',
+    howtoDemoHint: '↑ 真ん中をタップしてみよう',
+    howtoStages: 'ステージ',
+    howtoStagesText: '全<strong>100ステージ</strong>。グリッドサイズが変わるほど難しくなります。',
+    
+    // ヒント
+    hintDialogText: '次の1手を光らせます。<br>よろしいですか？',
+    hintDialogNote: '※広告が表示されます',
+    hintDialogCancel: 'キャンセル',
+    hintDialogOk: 'OK',
+    hintDescRemaining: 'ヒントを使うとあと{n}手で<br>クリアできます。',
+    hintDescFinal: 'ヒントを使うと次の1手で<br>クリアできます。',
+    
+    // 設定
+    settingsTitle: '設定',
+    settingsLanguage: '言語',
+    settingsLanguageDesc: 'アプリの表示言語を変更',
+    languageEn: 'English',
+    languageJa: '日本語',
+    back: '戻る'
+  }
+};
+
+function t(key) {
+  return i18n[currentLanguage][key] || key;
+}
+
+function loadLanguage() {
+  const saved = localStorage.getItem('togglen_language');
+  if (saved) {
+    currentLanguage = saved;
+  } else {
+    // 端末の言語を判定（日本語ならja、それ以外はen）
+    const deviceLang = navigator.language || navigator.userLanguage;
+    currentLanguage = deviceLang.startsWith('ja') ? 'ja' : 'en';
+  }
+}
+
+function saveLanguage(lang) {
+  currentLanguage = lang;
+  localStorage.setItem('togglen_language', lang);
+  updateUILanguage();
+  updateLanguageButtons();
+}
+
+function updateLanguageButtons() {
+  const buttons = document.querySelectorAll('.language-btn');
+  buttons.forEach(btn => {
+    const btnLang = btn.getAttribute('data-lang');
+    if (btnLang === currentLanguage) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+
+function updateUILanguage() {
+  // ホーム画面
+  document.querySelector('.app-subtitle').textContent = t('appSubtitle');
+  const homeButtons = document.querySelectorAll('#screen-home .btn-primary span, #screen-home .btn-secondary');
+  if (homeButtons[0]) homeButtons[0].textContent = t('play');
+  if (homeButtons[1]) homeButtons[1].textContent = t('howToPlay');
+  if (homeButtons[2]) homeButtons[2].textContent = t('settings');
+  
+  const statLabels = document.querySelectorAll('.stat-label');
+  if (statLabels[0]) statLabels[0].textContent = t('cleared');
+  if (statLabels[1]) statLabels[1].textContent = t('stages');
+  
+  // ステージ選択
+  const screenTitles = document.querySelectorAll('.screen-title');
+  if (screenTitles[0]) screenTitles[0].textContent = t('stageSelect');
+  
+  // ゲーム画面
+  const infoLabels = document.querySelectorAll('.info-label');
+  if (infoLabels[0]) infoLabels[0].textContent = t('moves');
+  if (infoLabels[1]) infoLabels[1].textContent = t('remaining');
+  
+  const btnHint = document.querySelector('.btn-hint');
+  if (btnHint) btnHint.textContent = t('hint');
+  
+  // ヒントダイアログ
+  const dialogText = document.querySelector('.dialog-text');
+  if (dialogText) dialogText.innerHTML = t('hintDialogText');
+  
+  const dialogNote = document.querySelector('.dialog-note');
+  if (dialogNote) dialogNote.textContent = t('hintDialogNote');
+  
+  const dialogButtons = document.querySelectorAll('.dialog-btn-cancel, .dialog-btn-ok');
+  if (dialogButtons[0]) dialogButtons[0].textContent = t('hintDialogCancel');
+  if (dialogButtons[1]) dialogButtons[1].textContent = t('hintDialogOk');
+  
+  // クリア画面
+  const clearTitle = document.querySelector('.clear-title');
+  if (clearTitle) clearTitle.textContent = t('clear');
+  
+  const btnNextSpan = document.querySelector('#btn-next-stage span');
+  if (btnNextSpan) btnNextSpan.textContent = t('nextStage');
+  
+  const clearStatLabels = document.querySelectorAll('.clear-stat-label');
+  if (clearStatLabels[0]) clearStatLabels[0].textContent = t('moves');
+  if (clearStatLabels[1]) clearStatLabels[1].textContent = t('minMoves');
+  
+  const clearBtnSecondary = document.querySelector('#screen-clear .btn-secondary');
+  if (clearBtnSecondary) clearBtnSecondary.textContent = t('stageSelect');
+  
+  // 遊び方
+  if (screenTitles[1]) screenTitles[1].textContent = t('howToPlay');
+  
+  const howtoSections = document.querySelectorAll('.howto-section');
+  if (howtoSections[0]) {
+    howtoSections[0].querySelector('h3').textContent = t('howtoGoal');
+    howtoSections[0].querySelector('p').innerHTML = t('howtoGoalText');
+  }
+  if (howtoSections[1]) {
+    howtoSections[1].querySelector('h3').textContent = t('howtoRule');
+    howtoSections[1].querySelector('p').innerHTML = t('howtoRuleText');
+  }
+  if (howtoSections[2]) {
+    howtoSections[2].querySelector('h3').textContent = t('howtoStages');
+    howtoSections[2].querySelector('p').innerHTML = t('howtoStagesText');
+  }
+  
+  const demoHint = document.querySelector('.demo-hint');
+  if (demoHint) demoHint.textContent = t('howtoDemoHint');
+  
+  // 設定画面
+  if (screenTitles[2]) screenTitles[2].textContent = t('settingsTitle');
+  
+  const settingLabel = document.querySelector('.setting-label');
+  if (settingLabel) settingLabel.textContent = t('settingsLanguage');
+  
+  const settingDesc = document.querySelector('.setting-desc');
+  if (settingDesc) settingDesc.textContent = t('settingsLanguageDesc');
+  
+  // ステージラベルと星基準も更新
+  if (currentStage !== null && currentStage !== undefined) {
+    const gameStageLabel = document.getElementById('game-stage-label');
+    if (gameStageLabel) gameStageLabel.textContent = `${t('stage')} ${currentStage + 1}`;
+    
+    const clearStageLabel = document.getElementById('clear-stage-label');
+    if (clearStageLabel) clearStageLabel.textContent = `${t('stage')} ${currentStage + 1}`;
+    
+    // 星基準の更新
+    const stage = STAGES[currentStage];
+    const m = stage.minMoves;
+    const criteriaEl = document.getElementById('game-criteria');
+    if (criteriaEl) {
+      criteriaEl.innerHTML =
+        `<span class="cr-label">${t('movesGoal')}</span><span class="cr-gold">★★★${m}</span><span class="cr-sep">/</span><span class="cr-silver">★★${Math.ceil(m * 1.5)}</span><span class="cr-sep">/</span><span class="cr-bronze">★${m * 2}</span>`;
+    }
+  }
+  
+  // ヒント説明の更新
+  updateHintDescription();
+}
+
+function updateHintDescription() {
+  const stage = STAGES[currentStage];
+  if (!stage) return;
+  
+  const remaining = stage.minMoves - hintStep - 1;
+  const descEl = document.getElementById('hint-desc');
+  if (descEl) {
+    if (remaining > 0) {
+      descEl.innerHTML = t('hintDescRemaining').replace('{n}', remaining);
+    } else {
+      descEl.innerHTML = t('hintDescFinal');
+    }
+  }
+}
+
+// ===== ステージデータ =====
 const STAGES = generateAllStages();
 
 function generateAllStages() {
@@ -35,7 +273,6 @@ function generateAllStages() {
     { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 }, { size: 5 },
   ];
 
-  // 手数ベースでステージを生成（全OFF状態からランダムにタップして初期状態を作る）
   const tapCounts = [
     // 3×3 易しい (1-10): 3〜7手
     3, 3, 4, 4, 5, 5, 6, 6, 7, 7,
@@ -55,7 +292,6 @@ function generateAllStages() {
     18, 18, 19, 19, 20,
   ];
 
-  // 固定シードで再現性のある乱数（100個）
   const seeds = [
     // 1-10
     42, 137, 256, 1789, 314, 512, 77, 199, 333, 421,
@@ -86,14 +322,13 @@ function generateAllStages() {
 }
 
 function seededRandom(seed) {
-  let s = seed >>> 0; // 符号なし32bit整数に正規化
+  let s = seed >>> 0;
   return function() {
-    // xorshift32: 範囲外にならない安定した疑似乱数
     s ^= s << 13;
     s ^= s >>> 17;
     s ^= s << 5;
-    s = s >>> 0; // 符号なし32bit
-    return s / 0x100000000; // [0, 1) に正規化（絶対に1.0にならない）
+    s = s >>> 0;
+    return s / 0x100000000;
   };
 }
 
@@ -101,7 +336,7 @@ function generateStage(size, taps, seed) {
   const n = size * size;
   const state = new Array(n).fill(0);
   const rand = seededRandom(seed);
-  const solution = []; // 解のタップ列（生成時と逆順にタップすれば全OFFに戻る）
+  const solution = [];
 
   const used = new Set();
   let count = 0;
@@ -117,7 +352,6 @@ function generateStage(size, taps, seed) {
     count++;
   }
 
-  // すべてOFFになってしまった場合は別のセルを追加
   if (state.every(v => v === 0)) {
     for (let i = 0; i < n; i++) {
       if (!used.has(i)) {
@@ -154,17 +388,18 @@ let currentStage = 0;
 let currentState = [];
 let moveCount = 0;
 let clearedStages = new Set();
-// ベストスコア: { stageIndex: { moves, stars } }
 let bestScores = {};
-// 連続クリア数（インタースティシャル広告用）
 let consecutiveClear = 0;
 
 // ===== 初期化 =====
 function init() {
+  loadLanguage();
   loadProgress();
   updateHomeStats();
   buildStageGrid();
   buildDemoGrid();
+  updateUILanguage();
+  updateLanguageButtons();
 }
 
 function loadProgress() {
@@ -197,7 +432,6 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const target = document.getElementById(id);
   if (target) {
-    // 少し遅延してアニメーション
     requestAnimationFrame(() => {
       target.classList.add('active');
     });
@@ -217,10 +451,14 @@ function showStageSelect() {
 }
 
 function showHowTo() {
-  // デモを初期状態にリセットしてから表示
   demoState = [0, 1, 0, 1, 1, 1, 0, 1, 0];
   buildDemoGrid();
   showScreen('screen-howto');
+}
+
+function showSettings() {
+  updateLanguageButtons();
+  showScreen('screen-settings');
 }
 
 // ===== 星評価計算 =====
@@ -271,15 +509,14 @@ function startStage(stageIndex) {
   moveCount = 0;
   hintStep = 0;
 
-  document.getElementById('game-stage-label').textContent = `STAGE ${stageIndex + 1}`;
+  document.getElementById('game-stage-label').textContent = `${t('stage')} ${stageIndex + 1}`;
   document.getElementById('move-count').textContent = '0';
 
-  // 星基準表示
   const m = stage.minMoves;
   const criteriaEl = document.getElementById('game-criteria');
   if (criteriaEl) {
     criteriaEl.innerHTML =
-      `<span class="cr-label">手数基準</span><span class="cr-gold">★★★${m}</span><span class="cr-sep">/</span><span class="cr-silver">★★${Math.ceil(m * 1.5)}</span><span class="cr-sep">/</span><span class="cr-bronze">★${m * 2}</span>`;
+      `<span class="cr-label">${t('movesGoal')}</span><span class="cr-gold">★★★${m}</span><span class="cr-sep">/</span><span class="cr-silver">★★${Math.ceil(m * 1.5)}</span><span class="cr-sep">/</span><span class="cr-bronze">★${m * 2}</span>`;
   }
 
   buildBoard(stage.size);
@@ -289,7 +526,6 @@ function startStage(stageIndex) {
   showScreen('screen-game');
 }
 
-// ボードサイズ計算
 function calcBoardMaxSize() {
   return Math.min(
     Math.min(window.innerWidth, 430) - 80,
@@ -330,13 +566,10 @@ function onCellTap(idx) {
   applyToggle(currentState, stage.size, idx);
   moveCount++;
 
-  // セル一覧取得（ヒント点滅停止 + フラッシュアニメーションで共用）
   const cells = document.querySelectorAll('.toggle-cell');
 
-  // どのセルをタップしても点滅を止める
   stopHintBlink();
 
-  // フラッシュアニメーション
   const row = Math.floor(idx / stage.size);
   const col = idx % stage.size;
   const affected = [
@@ -350,7 +583,7 @@ function onCellTap(idx) {
     if (r >= 0 && r < stage.size && c >= 0 && c < stage.size) {
       const i = r * stage.size + c;
       cells[i].classList.remove('flash');
-      void cells[i].offsetWidth; // reflow
+      void cells[i].offsetWidth;
       cells[i].classList.add('flash');
     }
   });
@@ -358,7 +591,6 @@ function onCellTap(idx) {
   updateBoard();
   updateGameInfo();
 
-  // クリア判定
   if (currentState.every(v => v === 0)) {
     setTimeout(() => showClear(), 300);
   }
@@ -399,6 +631,7 @@ function resetStage() {
 // ===== ヒント点滅管理 =====
 let hintBlinkInterval = null;
 let hintBlinkCell = null;
+let hintStep = 0;
 
 function startHintBlink(cell) {
   stopHintBlink();
@@ -428,24 +661,11 @@ function stopHintBlink() {
 }
 
 // ===== ヒント =====
-let hintStep = 0; // 何手目まで案内済みか
-
 function requestHint() {
   const dialog = document.getElementById('hint-dialog');
   if (!dialog) return;
 
-  const stage = STAGES[currentStage];
-  const remaining = stage.minMoves - hintStep - 1;
-
-  const descEl = document.getElementById('hint-desc');
-  if (descEl) {
-    if (remaining > 0) {
-      descEl.innerHTML = `ヒントを使うとあと${remaining}手で<br>クリアできます。`;
-    } else {
-      descEl.innerHTML = `ヒントを使うと次の1手で<br>クリアできます。`;
-    }
-  }
-
+  updateHintDescription();
   dialog.classList.add('active');
 }
 
@@ -456,7 +676,6 @@ function closeHintDialog() {
 
 function confirmHint() {
   closeHintDialog();
-  // リワード広告を見てからヒントを実行（広告が閉じた後に点滅開始）
   showRewardedAd(() => { applyHint(); });
 }
 
@@ -464,10 +683,8 @@ function applyHint() {
   const stage = STAGES[currentStage];
   const solution = stage.solution;
 
-  // 全ステップ案内済みなら何もしない
   if (hintStep >= solution.length) return;
 
-  // 初期状態から hintStep 手分だけ再現
   currentState = [...stage.state];
   for (let i = 0; i < hintStep; i++) {
     applyToggle(currentState, stage.size, solution[i]);
@@ -476,7 +693,6 @@ function applyHint() {
   updateBoard();
   updateGameInfo();
 
-  // 次の1手を光らせる（タップするか次の操作まで点滅し続ける）
   const hintIdx = solution[hintStep];
   const cells = document.querySelectorAll('.toggle-cell');
   const cell = cells[hintIdx];
@@ -486,11 +702,11 @@ function applyHint() {
 
   hintStep++;
 }
+
 function showClear() {
   const stage = STAGES[currentStage];
   const stars = calcStars(moveCount, stage.minMoves);
 
-  // ベストスコア更新
   const prev = bestScores[currentStage];
   if (!prev || stars > prev.stars || (stars === prev.stars && moveCount < prev.moves)) {
     bestScores[currentStage] = { moves: moveCount, stars };
@@ -499,18 +715,15 @@ function showClear() {
   clearedStages.add(currentStage);
   saveProgress();
 
-  // 連続クリアカウント
   consecutiveClear++;
   if (consecutiveClear % 5 === 0) {
-    // インタースティシャル広告
     showInterstitialAd();
   }
 
-  document.getElementById('clear-stage-label').textContent = `STAGE ${currentStage + 1}`;
+  document.getElementById('clear-stage-label').textContent = `${t('stage')} ${currentStage + 1}`;
   document.getElementById('clear-moves').textContent = moveCount;
   document.getElementById('clear-min-moves').textContent = stage.minMoves;
 
-  // 星表示
   const starsEl = document.getElementById('clear-stars');
   if (starsEl) {
     starsEl.textContent = stars === 3 ? '★★★' : stars === 2 ? '★★' : stars === 1 ? '★' : '';
@@ -532,7 +745,7 @@ function nextStage() {
 }
 
 // ===== 遊び方デモ =====
-let demoState = [0, 1, 0, 1, 1, 1, 0, 1, 0]; // 十字型ON
+let demoState = [0, 1, 0, 1, 1, 1, 0, 1, 0];
 
 function buildDemoGrid() {
   const grid = document.getElementById('demo-grid');
@@ -555,7 +768,6 @@ function onDemoTap(idx) {
   const cells = document.querySelectorAll('.demo-cell');
   demoState.forEach((val, i) => {
     cells[i].className = 'demo-cell ' + (val === 1 ? 'on' : 'off');
-    // スイッチ要素が無ければ追加
     if (!cells[i].querySelector('.cell-switch')) {
       const sw = document.createElement('div');
       sw.className = 'cell-switch';
@@ -593,13 +805,11 @@ async function showRewardedAd(onRewarded) {
       return;
     }
     await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID });
-    // showRewardVideoAd は広告が閉じた後に resolve し、報酬情報を返す
     const rewardItem = await AdMob.showRewardVideoAd();
     if (rewardItem) {
       onRewarded();
     }
   } catch (e) {
-    // 広告取得失敗時もヒントは実行する
     onRewarded();
   }
 }
